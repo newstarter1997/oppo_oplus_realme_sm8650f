@@ -460,7 +460,7 @@ jobs:
             fi
           fi
 
-      - name: 启用 Droidspaces 容器支持
+      - name: 启用 Droidspaces 容器支持/修复高通8gen3的gunyah内存问题
         run: |
           if [[ "${{ github.event.inputs.droidspaces_enable }}" != "false" ]]; then
             echo "正在启用 Droidspaces 容器支持..."
@@ -471,6 +471,15 @@ jobs:
             # 修补 oplus_bsp_midas 行为，避免开机崩溃
             wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/droidspaces_patch/fix_oplus_bsp_midas.patch
             patch -p1 -F 3 < fix_oplus_bsp_midas.patch || true
+            
+            #运用修复高通Gunyah SCM内存共享/回收时VMID映射逻辑混乱问题；解决大虚拟机场景下， kcalloc  申请超大连续物理内存（高阶页）分配失败OOM问题
+            wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/droidspaces_patch/gunyah-fix-large-guest-page-alloc.patch
+            patch -p1 -F 3 < gunyah-fix-large-guest-page-alloc.patch || true
+
+            wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/droidspaces_patch/gunyah-fix-scm-vmid.patch
+            patch -p1 -F 3 < gunyah-fix-scm-vmid.patch || true
+
+            
             # 应用 NTSync 补丁
             wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/droidspaces_patch/ntsync_base.patch
             wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/droidspaces_patch/ntsync_compat_${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch
